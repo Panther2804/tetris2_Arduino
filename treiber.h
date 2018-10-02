@@ -1,6 +1,5 @@
 
-#ifndef TETRISCLION_TREIBER_H
-#define TETRISCLION_TREIBER_H
+
 
 
 
@@ -18,4 +17,3 @@ int pinread();
 
 
 
-#endif //TETRISCLION_TREIBER_ 

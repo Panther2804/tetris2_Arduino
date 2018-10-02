@@ -1,9 +1,6 @@
-
-
-
-
-
-
+#include "tetris2.h"
+#include "treiber.h"
+#include "Arduino.h"
 
 int randomn(int min, int max) {
     random(min,max);
@@ -20,12 +17,11 @@ void sprintln(char a) {
 
 
 void sbegin(int a) {
-  Serial.begin(a)
+  Serial.begin(a);
 }
 
 int pinread() {
-    char a;
-    cin >> a;
+    char a = 'a';
     switch(a) {
         case 'w': return 1;
         case 's': return 2;

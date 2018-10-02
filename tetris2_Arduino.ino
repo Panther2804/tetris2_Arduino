@@ -1,7 +1,7 @@
 
-#include "main.h"
+#include "tetris2.h"
 #include "treiber.h"
-#include <iostream>
+
 
 const bool debug = false;
 
@@ -66,12 +66,6 @@ const int timeout = 5; //timeout before new piece
 int timerem = 4;
 int score = 0;
 
-int main() {
-    setup();
-    while (true) {
-        loop();
-    }
-}
 
 
 void setup() {

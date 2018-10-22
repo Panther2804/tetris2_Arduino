@@ -13,6 +13,10 @@ int randomn(int, int);
 
 int pinread();
 
+void stripeinit();
+void stripeshow();
+void pindef();
+
 
 
 

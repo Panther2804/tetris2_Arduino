@@ -21,16 +21,21 @@ void sbegin(int a) {
 }
 
 int pinread() {
-    char a = 'a';
-    switch(a) {
-        case 'w': return 1;
-        case 's': return 2;
-        case 'a': return 3;
-        case 'd': return 4;
-        case ' ': return 0;
-        default: return 0;
+    if(digitalRead(5)) return 1;
+    if(digitalRead(5)) return 2;
+    if(digitalRead(4)) return 3;
+    if(digitalRead(5)) return 4;
+    return 0;
 
-    }
 }
+void stripeinit() {}
+void stripeshow() {}
+void pindef() {
+  pinMode(2, INPUT);
+  pinMode(3, INPUT);
 
+  pinMode(4, INPUT);
+  pinMode(5, INPUT);
+  
+  }
  

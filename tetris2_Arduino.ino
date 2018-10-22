@@ -2,9 +2,8 @@
 #include "tetris2.h"
 #include "treiber.h"
 #include "Arduino.h"
-
-
-const bool debug = false;
+const bool debug = true;
+const bool drawdebug = false;
 
 const bool SerialActive = true;
 
@@ -62,59 +61,51 @@ int rotationold = 0;
 
 bool playerturn = false; //if true checks input if false does physicsgu
 const int timeout = 5; //timeout before new piece
-        const int basescore = 100;
-        const int basemult = 1.5;
+const int basescore = 100;
+const int basemult = 1.5;
+const int gameoverY = 3;
 int timerem = 4;
 int score = 0;
+int phytime = 500;
+unsigned long lastmillis = millis();
+bool phycompleted = false;
+bool playerchange = false;
+
 
 
 
 void setup() {
 
-    // put your setup code here, to run once:
 
-    randomSeed(millis());
-    playfieldinit();
+    pindef();
     sbegin(9600);
-    sprintln('1');
-    posx = 5;
-    posy = 2;
-    //playfield[3][7] = 5;
-    transfer();
-    minit();
-    mprint();
+    setuptetris();
+
 
 }
 
 void loop() {
-    // put your main code here, to run repeatedly:
-    /*
-    delay(1000);
-    sprintln(rotation + 48);
-    pieceselect(1);
 
-    draw(piece, 1, true); //draw new piece
-
-    transfer();
-    mprint();
-    draw(piece, 0, false); //undraw old piece
-    //transfer(); //undo later (debug code)
-    //mprint(); //undo later
-
-
-    delay(1000);
-
-    */
+  
+   if(phycompleted) {
+    playerturn = true;
+    phycompleted = false;
+    lastmillis = millis();
+    
+   }
 
 
 
+    
+   if(millis() > lastmillis + phytime){
+    playerturn = false; 
+    phycompleted = false;
+    Serial.println("Phytime");
+   }
 
-
-
-
-
-    playerturn =  !playerturn;
+    
     if (playerturn) {
+        playerchange = true;
         switch(pinread()) {
             case 1: if(rotation<3) rotation ++;
                     else rotation = 0;
@@ -127,51 +118,92 @@ void loop() {
             case 4: posx ++;
             break;
             default:
+            playerchange = false;
                 break;
 
         }
     } else {
-        posy += 1;
+        posy += 1; 
+        phycompleted = true;
+               
     }
 
-    if (draw(piece, 1, true) == false) {
-        draw(piece, 1, true);
+    if (draw(piece, ccolor, true) == false) {
+        Serial.println("youve hit a wall");
+        if(playerturn) if(debug) Serial.println("on playerturn");
+        if (playerturn) draw(piece, 1, true);
+        else { 
+        if(debug) Serial.println("drawing piece in phymode");
+          draw(piece, ccolor, true);
+        if(debug) Serial.println("drew piece in phymode");
+        }
         if ((timerem == 0) && (!playerturn)) {
             timerem = timeout;
-        } else if (timerem == 1) {
-            posy = 3;
-            posx = sizeplayfieldx / 2;
+        } else if ((timerem == 1) || (timerem < 0)) {
+            Serial.println("new piece");
             pieceselect(randomn(0, 7));
             linecheck();
             timerem = 0;
+            if(posy == gameoverY) {
+                setuptetris();
+            }
+            posy = gameoverY;
+            posx = sizeplayfieldx / 2;
         } else {
+            if(debug) Serial.println("timerem printing");
             timerem--;
             sprintln(timerem + 48);
+            if(debug) Serial.println("timerem printed");
         }
     }
     else {
-        sprintln(timerem + 48);
-        if((!playerturn) && (timerem != 0)) timerem = 0;
-        sprintln('r');
+        //sprintln(timerem + 48);
+        if((!playerturn) && (timerem != 0)){ timerem = 0;
+        sprintln('r');}
     }
 
 
-    mput(posx, posy, 4, false);
+if(playerchange || !playerturn) {
+   if(debug) Serial.println("started drawing");
+    mput(posx, posy, 4, false); //prints center of piece
+    if(debug) Serial.println("finished mput");
+    transfer();
+    if(debug) Serial.println("completed transfer");
+    playfieldprint();
+    if(debug) Serial.println("completed playfieldprint");
+    draw(piece, 0, false);
+    if(debug) Serial.println("completed draw");
+    transfer();
+    if(debug) Serial.println("completed transfer");
+    linecheck();
+    if(debug) Serial.println("completed linecheck");
+    delay(100);
+
+}
+
+
+
+}
+
+
+void setuptetris() {
+    randomSeed(millis());
+    posy = gameoverY;
+    posx = sizeplayfieldx / 2;
+    pieceselect(4);
+    playfieldinit();
+    minit();
+    draw(piece,ccolor,true);
     transfer();
     mprint();
-    draw(piece, 0, false);
-    transfer();
-    linecheck();
-    //delay(100);
-
-
-
 }
 
 void minit() {  //blanks the matrix (initializer)
     for (int i = 0; i < sizeM; i++) {
         for (int o = 0; o < sizeM; o++) {
             a[i][o] = 0;
+            stripeshow();
+            delay(50);
         }
     }
 }
@@ -210,7 +242,7 @@ void playfieldinit() {  //blanks the playfield (initializer)
 void mprint() {  // does the actual drawing
     for (int i = 0; i < sizeM; i++) {
         for (int o = 0; o < sizeM; o++) {
-            sprint(48 + a[o][i]);
+            Serial.print(a[o][i]);
             sprint(' ');
         }
         sprintln(' ');
@@ -221,7 +253,7 @@ void mprint() {  // does the actual drawing
 void playfieldprint() {  // does the actual drawing (debug)
     for (int i = 0; i < sizeplayfieldy; i++) {
         for (int o = 0; o < sizeplayfieldx; o++) {
-            sprint(48 + playfield[o][i]);
+            Serial.print(playfield[o][i]);
             sprint(' ');
         }
         sprintln(' ');
@@ -283,13 +315,13 @@ bool draw(const bool b[][4], int color, bool ccheck) {  //handels piece drawing
                     if (b[i][o]) {
                         mput(posx + i -1, posy + o - 1, color, false);
 
-                        if (debug) {
-                            transfer();
-                            mprint();
-                            sprint('i');
-                            sprint(i + 48);
-                            sprint('o');
-                            sprintln(o + 48);
+                        if (drawdebug) {
+                            //transfer();
+                            //mprint();
+                            sprint("Putting something at x: ");
+                            Serial.print(i);
+                            sprint(" and y: ");
+                            Serial.println(o);
                         }
                     }
 
@@ -320,13 +352,13 @@ bool draw(const bool b[][4], int color, bool ccheck) {  //handels piece drawing
                     if (b[i][o]) {
                         mput(posx + o - 1, posy - i + 1, color, false);
 
-                        if (debug) {
-                            transfer();
-                            mprint();
-                            sprint('i');
-                            sprint(i + 48);
-                            sprint('o');
-                            sprintln(o + 48);
+                        if (drawdebug) {
+                            //transfer();
+                            //mprint();
+                            sprint("Putting something at x: ");
+                            Serial.print(i);
+                            sprint(" and y: ");
+                            Serial.println(o);
                         }
                     }
 
@@ -357,13 +389,13 @@ bool draw(const bool b[][4], int color, bool ccheck) {  //handels piece drawing
                     if (b[i][o]) {
                         mput(posx - i + 1, posy - o + 1 , color, false);
 
-                        if (debug) {
-                            transfer();
-                            mprint();
-                            sprint('i');
-                            sprint(i + 48);
-                            sprint('o');
-                            sprintln(o + 48);
+                        if (drawdebug) {
+                            //transfer();
+                            //mprint();
+                            sprint("Putting something at x: ");
+                            Serial.print(i);
+                            sprint(" and y: ");
+                            Serial.println(o);
                         }
                     }
 
@@ -395,13 +427,13 @@ bool draw(const bool b[][4], int color, bool ccheck) {  //handels piece drawing
                     if (b[i][o]) {
                         mput(posx - o + 1, posy + i - 1, color, false);
 
-                        if (debug) {
-                            transfer();
-                            mprint();
-                            sprint('i');
-                            sprint(i + 48);
-                            sprint('o');
-                            sprintln(o + 48);
+                        if (drawdebug) {
+                            //transfer();
+                            //mprint();
+                            sprint("Putting something at x: ");
+                            Serial.print(i);
+                            sprint(" and y: ");
+                            Serial.println(o);
                         }
                     }
 
@@ -429,24 +461,31 @@ void pieceselect(int a) {
     switch (a) {
         case 0:
             cnstcpy(piece, lp); // piece = lp;
+            ccolor = 9;
             break;
         case 1:
             cnstcpy(piece, lpm);// piece =lpm;
+            ccolor = 8;
             break;
         case 2:
             cnstcpy(piece, cube);//piece =cube;
+            ccolor = 4;
             break;
         case 3:
             cnstcpy(piece, line);//piece =line;
+            ccolor = 3;
             break;
         case 4:
             cnstcpy(piece, halfh);//piece =halfh
+            ccolor = 5;
             break;
         case 5:
             cnstcpy(piece, squiggly);
+            ccolor = 6;
             break;
         case 6:
             cnstcpy(piece, rsquiggly);
+            ccolor = 7;
             break;
 
     }
@@ -484,6 +523,8 @@ void linecheck() {
         score += basescore * basemult^l;
 
     }
+
+
 
 
 }

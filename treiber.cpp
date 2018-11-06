@@ -1,3 +1,5 @@
+#include <Adafruit_NeoPixel.h>
+
 #include "tetris2.h"
 #include "treiber.h"
 #include "Arduino.h"
@@ -21,15 +23,20 @@ void sbegin(int a) {
 }
 
 int pinread() {
-    if(digitalRead(5)) return 1;
-    if(digitalRead(5)) return 2;
+    if(digitalRead(2)) return 1;
+    if(digitalRead(3)) return 2;
     if(digitalRead(4)) return 3;
     if(digitalRead(5)) return 4;
     return 0;
 
 }
-void stripeinit() {}
-void stripeshow() {}
+
+  
+
+
+
+
+
 void pindef() {
   pinMode(2, INPUT);
   pinMode(3, INPUT);
